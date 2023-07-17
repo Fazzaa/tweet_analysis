@@ -169,6 +169,8 @@ lm = WordNetLemmatizer()
 
 hashtags = []
 counters = []
+emoji = []
+emoticons = []
 stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 
               'you', 'you\'re', 'you\'ve', 'you\'ll', 'you\'d', 'your', 'yours', 
               'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 
@@ -198,18 +200,19 @@ for file in list_of_file:
 		tweet = tweet.split(" ")
 
 		tweet = [word.lower() for word in tweet if word not in remove_words and word not in punctuation]
-		hashtags.append([word for word in tweet if word[0] == '#'])
-		#TODO: trattamento emoji e emoticons
-		
 		tweet = [slang_words[word] if word in slang_words.keys() else word for word in tweet]
-		
+
+		hashtags.append([word for word in tweet if word[0] == '#'])
+		emoji.append([word for word in tweet if word in emoji_neg or word in emoji_pos])
+		emoticons.append([word for word in tweet if word in neg_emoticons or word in pos_emoticons])
+
+		tweet = [word for word in tweet if word not in emoji_neg and word not in emoji_pos and word not in pos_emoticons and word not in neg_emoticons]
 		tweet = [word for word in tweet if word not in stop_words]
 		
-		#stemming
 		tweet = [ps.stem(word) for word in tweet]
 
-
 		c.update(tweet)
+		
 	print("Fine file")
 	counters.append(c)
 	wc = WordCloud(width = 800, height = 800,background_color ='white').generate_from_frequencies(c)
