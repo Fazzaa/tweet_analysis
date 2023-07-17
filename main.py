@@ -1,8 +1,8 @@
 from path import *
-from nltk.tokenize import word_tokenize
+from wordcloud import WordCloud
 from nltk.stem import PorterStemmer, WordNetLemmatizer
-from nltk.corpus import stopwords
 from collections import Counter
+import matplotlib.pyplot as plt
 
 anger_tweets = open(ANGER_PATH, encoding='utf-8')
 anticipation_tweets = open(ANTICIPATION_PATH, encoding='utf-8')
@@ -13,16 +13,16 @@ sadness_tweets = open(SADNESS_PATH, encoding='utf-8')
 surprise_tweets = open(SURPRISE_PATH, encoding='utf-8')
 trust_tweets = open(TRUST_PATH, encoding='utf-8')
 
+list_of_file = [anger_tweets, anticipation_tweets, disgust_tweets, fear_tweets, joy_tweets, sadness_tweets, surprise_tweets, trust_tweets]
+
 punctuation = [",", "?", "!", ".", ";", ":", "\\",
 			   "/", "(", ")", "&", "_", "+", "=", "<", ">", "\n"]
 
 pos_emoticons = ['B-)', ':)', ':-)', ":')", ":'-)", ':D', ':-D', ':\'-)', ":')", ':o)', ':]', ':3', ':c)', ':>', '=]', '8)', '=)', ':}', ':^)', '8-D',
-				 '8D', 'x-D', 'xD', 'X-D', 'XD', '=-D', '=D', '=-3', '=3', 'B^D', ':-))', ':*', ':^*', '( \'}{\' )', '^^', '(^_^)', '^-^', "^.^", "^3\^", "\^L\^"]
+				 '8D', 'x-D', 'xD', 'X-D', 'XD', '=-D', '=D', '=-3', '=3', 'B^D', ':-))', ':*', ':^*', '( \'}{\' )', '^^', '(^_^)', '^-^', "^.^", "^3\^", "\^L\^", "<3"]
 
 neg_emoticons = [':(', ':-(', ":'(", ":'-(", '>:[', ':-c', ':c', ':-<', ':<', ':-[', ':[', ':{', ':\'-(', ':\'(', ' _( ', ':\'[', "='(", "' [", "='[",
-				 ":'-<", ":' <", ":'<", "=' <", "='<", "T_T", "T.T", "(T_T)", "y_y", "y.y", "(Y_Y)", ";-;", ";_;", ";.;", ":_:", "o .__. o", ".-."]
-
-stop_words = set(stopwords.words('english'))
+				 ":'-<", ":' <", ":'<", "=' <", "='<", "T_T", "T.T", "(T_T)", "y_y", "y.y", "(Y_Y)", ";-;", ";_;", ";.;", ":_:", "o .__. o", ".-.", "</3"]
 
 emoji_pos = [u'\U0001F601', u'\U0001F602', u'\U0001F603', u'\U0001F604', u'\U0001F605', u'\U0001F606', u'\U0001F609', u'\U0001F60A', u'\U0001F60B',
 			 u'\U0001F60E', u'\U0001F60D', u'\U0001F618', u'\U0001F617', u'\U0001F619', u'\U0001F61A', u'\U0000263A', u'\U0001F642', u'\U0001F917',
@@ -128,7 +128,7 @@ slang_words = {'afaik': 'as far as i know',
 			   'irl': 'in real life',
 			   'kiss': 'keep it simple, stupid',
 			   'ldr': 'long distance relationship',
-			   'lmao': 'laugh my a.. off',
+			   'lmao': 'laugh my ass off',
 			   'lol': 'laughing out loud',
 			   'ltns': 'long time no see',
 			   'l8r': 'later',
@@ -136,13 +136,13 @@ slang_words = {'afaik': 'as far as i know',
 			   'm8': 'mate',
 			   'nrn': 'no reply necessary',
 			   'oic': 'oh i see',
-			   'pita': 'pain in the a..',
+			   'pita': 'pain in the ass',
 			   'prt': 'party',
 			   'prw': 'parents are watching',
 			   'qpsa?': 'que pasa?',
 			   'rofl': 'rolling on the floor laughing',
 			   'roflol': 'rolling on the floor laughing out loud',
-			   'rotflmao': 'rolling on the floor laughing my a.. off',
+			   'rotflmao': 'rolling on the floor laughing my ass off',
 			   'sk8': 'skate',
 			   'stats': 'your sex and age',
 			   'asl': 'age, sex, location',
@@ -153,11 +153,13 @@ slang_words = {'afaik': 'as far as i know',
 			   'u2': 'you too',
 			   'u4e': 'yours for ever',
 			   'wb': 'welcome back',
-			   'wtf': 'what the f...',
+			   'wtf': 'what the fuck',
 			   'wtg': 'way to go!',
 			   'wuf': 'where are you from?',
 			   'w8': 'wait...',
-			   '7k': 'sick:-d laugher'
+			   '7k': 'sick',
+			   '@' : 'at',
+			   'i\'m': 'i am'
 			   }
 
 remove_words = ['USERNAME', 'URL']
@@ -165,29 +167,58 @@ remove_words = ['USERNAME', 'URL']
 ps = PorterStemmer()
 lm = WordNetLemmatizer()
 
-anger_hashtags = []
-c = Counter()
-for tweet in anger_tweets.readlines():
-	tweet = word_tokenize(tweet)
-	tweet = [word for word in tweet if word not in remove_words]
-	anger_hashtags.extend([word for word in tweet if word[0] == '#'])
-	# TODO: trattamento emoji e emoticons
-	tweet = [word.lower() for word in tweet if word not in punctuation]
-	
-	temp = []
-	for word in tweet:
-		if word in slang_words.keys():
-			temp.extend([slang_words[word]])
-		else:
-			temp.extend([word])
-	tweet = temp
-	
-	#stemming
-	tweet = [ps.stem(word) for word in tweet]
+hashtags = []
+counters = []
+stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 
+              'you', 'you\'re', 'you\'ve', 'you\'ll', 'you\'d', 'your', 'yours', 
+              'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 
+              'she\'s', 'her', 'hers', 'herself', 'it', 'it\'s', 'its', 'itself', 
+              'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 
+              'who', 'whom', 'this', 'that', 'that\'ll', 'these', 'those', 'am', 
+              'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 
+              'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 
+              'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 
+              'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 
+              'through', 'during', 'before', 'after', 'above', 'below', 'to', 
+              'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 
+              'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 
+              'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 
+              'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 
+              'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 
+              'don\'t', 'should', 'should\'ve', 'now', 'd', 'll', 'm', 'o', 're', 
+              've', 'y', 'ain', 'aren', 'aren\'t', 'couldn', 'couldn\'t', 'didn', 'didn\'t', 
+              'doesn', 'doesn\'t', 'hadn', 'hadn\'t', 'hasn', 'hasn\'t', 'haven', 'haven\'t', 
+              'isn', 'isn\'t', 'ma', 'mightn', 'mightn\'t', 'mustn', 'mustn\'t', 'needn', 
+              'needn\'t', 'shan', 'shan\'t', 'shouldn', 'shouldn\'t', 'wasn', 'wasn\'t', 
+              'weren', 'weren\'t', 'won', 'won\'t', 'wouldn', 'wouldn\'t']
 
-	#lemming
-	#tweet = [lm.lemmatize(word) for word in tweet]
+for file in list_of_file:
+	c = Counter()
+	for tweet in file.readlines():
+		tweet = tweet.split(" ")
 
-	tweet = [word for word in tweet if word not in stop_words]
-	c.update(tweet)
-	print(c)
+		tweet = [word.lower() for word in tweet if word not in remove_words and word not in punctuation]
+		hashtags.append([word for word in tweet if word[0] == '#'])
+		#TODO: trattamento emoji e emoticons
+		
+		tweet = [slang_words[word] if word in slang_words.keys() else word for word in tweet]
+		
+		tweet = [word for word in tweet if word not in stop_words]
+		
+		#stemming
+		tweet = [ps.stem(word) for word in tweet]
+
+
+		c.update(tweet)
+	print("Fine file")
+	counters.append(c)
+	wc = WordCloud(width = 800, height = 800,background_color ='white').generate_from_frequencies(c)
+	plt.figure(figsize = (8, 8), facecolor = None)
+	plt.imshow(wc)
+	plt.savefig("test.png")
+	plt.axis("off")
+	plt.tight_layout(pad = 0)
+	
+	plt.show()
+
+print("Fine di tutti i file")
