@@ -1,8 +1,11 @@
 from path import *
-from wordcloud import WordCloud
+from wordcloud import WordCloud, ImageColorGenerator
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from collections import Counter
 import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
+
 
 anger_tweets = open(ANGER_PATH, encoding='utf-8')
 anticipation_tweets = open(ANTICIPATION_PATH, encoding='utf-8')
@@ -18,21 +21,22 @@ list_of_file = [anger_tweets, anticipation_tweets, disgust_tweets, fear_tweets, 
 punctuation = [",", "?", "!", ".", ";", ":", "\\",
 			   "/", "(", ")", "&", "_", "+", "=", "<", ">", "\n"]
 
-pos_emoticons = ['B-)', ':)', ':-)', ":')", ":'-)", ':D', ':-D', ':\'-)', ":')", ':o)', ':]', ':3', ':c)', ':>', '=]', '8)', '=)', ':}', ':^)', '8-D',
-				 '8D', 'x-D', 'xD', 'X-D', 'XD', '=-D', '=D', '=-3', '=3', 'B^D', ':-))', ':*', ':^*', '( \'}{\' )', '^^', '(^_^)', '^-^', "^.^", "^3\^", "\^L\^", "<3"]
+pos_emoticons = ['B-)', ':)', ':-)', ":')", ":'-)", ':D', ':-D', ':\'-)', ":')", ':o)', ':]', ':3', ':c)', ':>', '=]', '8)', '=)', ':}', ':^)', '8-D', 'd:', 'd;', '(:', ':d',
+				 '8D', 'x-D', 'xD', 'X-D', 'XD', '=-D', '=D', '=-3', '=3', 'B^D', ':-))', ':*', ':^*', '( \'}{\' )', '^^', '(^_^)', '^-^', "^.^", "^3\^", "\^L\^", "<3", ':p']
 
-neg_emoticons = [':(', ':-(', ":'(", ":'-(", '>:[', ':-c', ':c', ':-<', ':<', ':-[', ':[', ':{', ':\'-(', ':\'(', ' _( ', ':\'[', "='(", "' [", "='[",
-				 ":'-<", ":' <", ":'<", "=' <", "='<", "T_T", "T.T", "(T_T)", "y_y", "y.y", "(Y_Y)", ";-;", ";_;", ";.;", ":_:", "o .__. o", ".-.", "</3"]
+neg_emoticons = [':(', ':-(', ":'(", ":'-(", '>:[', ':-c', ':c', ':-<', ':<', ':-[', ':[', ':{', ':\'-(', ':\'(', ' _( ', ':\'[', "='(", "' [", "='[", ":/", ":-/", "=/", ":\\", 'o_o', '0_o',
+				 ":'-<", ":' <", ":'<", "=' <", "='<", "T_T", "T.T", "(T_T)", "y_y", "y.y", "(Y_Y)", ";-;", ";_;", ";.;", ":_:", "o .__. o", ".-.", "</3", ">.<", ">_<", "):", ":o", 'o.o']
 
 emoji_pos = [u'\U0001F601', u'\U0001F602', u'\U0001F603', u'\U0001F604', u'\U0001F605', u'\U0001F606', u'\U0001F609', u'\U0001F60A', u'\U0001F60B',
 			 u'\U0001F60E', u'\U0001F60D', u'\U0001F618', u'\U0001F617', u'\U0001F619', u'\U0001F61A', u'\U0000263A', u'\U0001F642', u'\U0001F917',
 			 u'\U0001F607', u'\U0001F60F', u'\U0001F61C', u'\U0001F608', u'\U0001F646', u'\U0001F48F', u'\U0001F44C', u'\U0001F44F', u'\U0001F48B',
-			 u'\U0001F638', u'\U0001F639', u'\U0001F63A', u'\U0001F63B', u'\U0001F63C', u'\U0001F63D', u'\U0001F192', u'\U0001F197']
+			 u'\U0001F638', u'\U0001F639', u'\U0001F63A', u'\U0001F63B', u'\U0001F63C', u'\U0001F63D', u'\U0001F192', u'\U0001F197', u'\U00002764',
+			 u'\U0001F62E', u'\U0001F62F', u'\U00002665']
 
 emoji_neg = [u'\U0001F625', u'\U0001F60C', u'\U00002639', u'\U0001F641', u'\U0001F612', u'\U0001F614', u'\U0001F615', u'\U0001F616', u'\U0001F632',
 			 u'\U0001F61E', u'\U0001F61F', u'\U0001F622', u'\U0001F62D', u'\U0001F626', u'\U0001F627', u'\U0001F628', u'\U0001F631', u'\U0001F621',
 			 u'\U0001F620', u'\U0001F64D', u'\U0001F64E', u'\U0000270A', u'\U0001F44A', u'\U0001F494', u'\U0001F4A2', u'\U0001F5EF', u'\U0001F63E',
-			 u'\U0001F63F']
+			 u'\U0001F63F', u'\U0001F611', u'\U0001F610']
 
 others_emoji = [u'\U0001F004', u'\U0001F0CF', u'\U0001F300', u'\U0001F301', u'\U0001F302', u'\U0001F303', u'\U0001F304', u'\U0001F305', u'\U0001F306', u'\U0001F307',
 				u'\U0001F309', u'\U0001F30A', u'\U0001F30B', u'\U0001F30F', u'\U0001F313', u'\U0001F315', u'\U0001F31B', u'\U0001F320', u'\U0001F330', u'\U0001F331',
@@ -192,7 +196,7 @@ stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves',
               'doesn', 'doesn\'t', 'hadn', 'hadn\'t', 'hasn', 'hasn\'t', 'haven', 'haven\'t', 
               'isn', 'isn\'t', 'ma', 'mightn', 'mightn\'t', 'mustn', 'mustn\'t', 'needn', 
               'needn\'t', 'shan', 'shan\'t', 'shouldn', 'shouldn\'t', 'wasn', 'wasn\'t', 
-              'weren', 'weren\'t', 'won', 'won\'t', 'wouldn', 'wouldn\'t']
+              'weren', 'weren\'t', 'won', 'won\'t', 'wouldn', 'wouldn\'t', '....', '...', '..', 'i am']
 
 for file in list_of_file:
 	c = Counter()
@@ -203,19 +207,23 @@ for file in list_of_file:
 		tweet = [slang_words[word] if word in slang_words.keys() else word for word in tweet]
 
 		hashtags.append([word for word in tweet if word[0] == '#'])
-		emoji.append([word for word in tweet if word in emoji_neg or word in emoji_pos])
+		emoji.append([word for word in tweet if word in emoji_neg or word in emoji_pos or word in others_emoji])
 		emoticons.append([word for word in tweet if word in neg_emoticons or word in pos_emoticons])
 
-		tweet = [word for word in tweet if word not in emoji_neg and word not in emoji_pos and word not in pos_emoticons and word not in neg_emoticons]
+		tweet = [word for word in tweet if word not in emoji_neg and word not in emoji_pos and word not in pos_emoticons and word not in neg_emoticons and word not in others_emoji and word[0] != '#']
 		tweet = [word for word in tweet if word not in stop_words]
 		
 		tweet = [ps.stem(word) for word in tweet]
 
 		c.update(tweet)
 		
+	print(c.most_common(20))
 	print("Fine file")
 	counters.append(c)
-	wc = WordCloud(width = 800, height = 800,background_color ='white').generate_from_frequencies(c)
+	pink_mask = np.array(Image.open(r"C:\Users\andre\Desktop\PINKLADYFINALE.png"))
+	wc = WordCloud(width = 800, height = 800, background_color='white', mask=pink_mask).generate_from_frequencies(c)
+	image_colors = ImageColorGenerator(pink_mask)
+	wc.recolor(color_func = image_colors) 
 	plt.figure(figsize = (8, 8), facecolor = None)
 	plt.imshow(wc)
 	plt.savefig("test.png")
