@@ -1,10 +1,11 @@
 from path import *
 from wordcloud import WordCloud, ImageColorGenerator
-from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer
 from collections import Counter
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
+import os
 
 
 def get_negative_word():
@@ -17,7 +18,49 @@ def get_negative_word():
 
 	return negative_words
 
+def update_score(tweet, emotion):
+	#print(emotion)
+	#{parola: [scores]}
+	#scores = [EMOSN, NRC, SS, ...]
+	emosn, nrc, ss = [],[],[]
+	result_dict = {}
+	with open(os.path.join(PATH, f"{emotion}/EmoSN_{emotion.lower()}.txt")) as file:
+			line = file.readline()
+			while line != '':
+				emosn.append(line.replace("\n", ""))
+				line = file.readline()
+	with open(os.path.join(PATH, f"{emotion}/NRC_{emotion.lower()}.txt")) as file:
+		line = file.readline()
+		while line != '':
+			nrc.append(line.replace("\n", ""))
+			line = file.readline()
+	with open(os.path.join(PATH, f"{emotion}/sentisense_{emotion.lower()}.txt")) as file:
+		line = file.readline()
+		while line != '':
+			ss.append(line.replace("\n", ""))
+			line = file.readline()
 
+	for word in tweet:
+		score = []
+		emotion_dict = main_dict[emotion]
+		if word not in emotion_dict.keys():
+			score.append(1 if word in emosn else 0)
+			score.append(1 if word in nrc else 0)
+			score.append(1 if word in ss else 0)
+			result_dict[word] = score
+	
+	return result_dict
+
+emotions = {
+		   0: "Anger",
+	       1: "Anticipation",
+		   2: "Disgust",
+		   3: "Fear",
+		   4: "Joy",
+		   5: "Sadness",
+		   6: "Surprise",
+		   7: "Trust"
+		   }
 anger_tweets = open(ANGER_PATH, encoding='utf-8')
 anticipation_tweets = open(ANTICIPATION_PATH, encoding='utf-8')
 disgust_tweets = open(DISGUST_PATH, encoding='utf-8')
@@ -36,7 +79,7 @@ pos_emoticons = ['B-)', ':)', ':-)', ":')", ":'-)", ':D', ':-D', ':\'-)', ":')",
 				 '8D', 'x-D', 'xD', 'X-D', 'XD', '=-D', '=D', '=-3', '=3', 'B^D', ':-))', ':*', ':^*', '( \'}{\' )', '^^', '(^_^)', '^-^', "^.^", "^3\^", "\^L\^", "<3", ':p', ':)))']
 
 neg_emoticons = [':(', ':-(', ":'(", ":'-(", '>:[', ':-c', ':c', ':-<', ':<', ':-[', ':[', ':{', ':\'-(', ':\'(', ' _( ', ':\'[', "='(", "' [", "='[", ":/", ":-/", "=/", ":\\", 'o_o', '0_o',
-				 ":'-<", ":' <", ":'<", "=' <", "='<", "T_T", "T.T", "(T_T)", "y_y", "y.y", "(Y_Y)", ";-;", ";_;", ";.;", ":_:", "o .__. o", ".-.", "</3", ">.<", ">_<", "):", ":o", 'o.o']
+				 ":'-<", ":' <", ":'<", "=' <", "='<", "T_T", "T.T", "(T_T)", "y_y", "y.y", "(Y_Y)", ";-;", ";_;", ";.;", ":_:", "o .__. o", ".-.", "</3", ">.<", ">_<", "):", ":o", 'o.o', '<\\3']
 
 emoji_pos = [u'\U0001F601', u'\U0001F602', u'\U0001F603', u'\U0001F604', u'\U0001F605', u'\U0001F606', u'\U0001F609', u'\U0001F60A', u'\U0001F60B',
 			 u'\U0001F60E', u'\U0001F60D', u'\U0001F618', u'\U0001F617', u'\U0001F619', u'\U0001F61A', u'\U0000263A', u'\U0001F642', u'\U0001F917',
@@ -180,9 +223,7 @@ slang_words = {'afaik': 'as far as i know',
 
 remove_words = ['USERNAME', 'URL']
 
-ps = PorterStemmer()
 lm = WordNetLemmatizer()
-
 hashtags = []
 counters = []
 emoji = []
@@ -210,8 +251,19 @@ stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves',
 			  'needn\'t', 'shan', 'shan\'t', 'shouldn', 'shouldn\'t', 'wasn', 'wasn\'t', 
 			  'weren', 'weren\'t', 'won', 'won\'t', 'wouldn', 'wouldn\'t', '....', '...', '..', 'i am']
 negative_words = get_negative_word()
-
-for file in list_of_file:
+main_dict = {
+			"Anger": {},
+	     	"Anticipation": {},
+			"Disgust": {},
+			"Fear": {},
+			"Joy": {},
+			"Sadness": {},
+			"Surprise": {},
+			"Trust": {}
+			}
+i = 0
+while i in range(len(list_of_file)):
+	file = list_of_file[i]
 	c = Counter()
 	for tweet in file.readlines():
 		tweet = tweet.split(" ")
@@ -229,7 +281,6 @@ for file in list_of_file:
 		final_tweet = []
 		next_word_negated = False
 		
-		#print(negative_words)
 		for word in tweet:
 			if word in negative_words:  
 				next_word_negated = True  
@@ -241,17 +292,18 @@ for file in list_of_file:
 						final_tweet.append(word)
 
 			next_word_negated = False
-		c.update(final_tweet)
 		
+		dict_of_score = update_score(final_tweet, emotions[i])
+		main_dict[emotions[i]].update(dict_of_score)
+		c.update(final_tweet)
+	
 	print(c.most_common(20))
 	print("Fine file")
 	counters.append(c)
-	
+	i += 1
 print("Fine di tutti i file")
 	
 	
-
-
 def generate_wordcloud(counter):
 	pink_mask = np.array(Image.open(MASK_PATH))
 	wc = WordCloud(width = 800, height = 800, background_color='white', mask=pink_mask).generate_from_frequencies(counter)
