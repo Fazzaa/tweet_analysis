@@ -7,6 +7,17 @@ import numpy as np
 from PIL import Image
 
 
+def get_negative_word():
+	negative_words = [] 
+	with open(NEG_WORDS_PATH, 'r', encoding="utf8") as f:
+		line = f.readline()
+		while line != '':
+			negative_words.append(line)
+			line = f.readline()
+
+	return negative_words
+
+
 anger_tweets = open(ANGER_PATH, encoding='utf-8')
 anticipation_tweets = open(ANTICIPATION_PATH, encoding='utf-8')
 disgust_tweets = open(DISGUST_PATH, encoding='utf-8')
@@ -21,8 +32,8 @@ list_of_file = [anger_tweets, anticipation_tweets, disgust_tweets, fear_tweets, 
 punctuation = [",", "?", "!", ".", ";", ":", "\\",
 			   "/", "(", ")", "&", "_", "+", "=", "<", ">", "\n"]
 
-pos_emoticons = ['B-)', ':)', ':-)', ":')", ":'-)", ':D', ':-D', ':\'-)', ":')", ':o)', ':]', ':3', ':c)', ':>', '=]', '8)', '=)', ':}', ':^)', '8-D', 'd:', 'd;', '(:', ':d',
-				 '8D', 'x-D', 'xD', 'X-D', 'XD', '=-D', '=D', '=-3', '=3', 'B^D', ':-))', ':*', ':^*', '( \'}{\' )', '^^', '(^_^)', '^-^', "^.^", "^3\^", "\^L\^", "<3", ':p']
+pos_emoticons = ['B-)', ':)', ':-)', ":')", ":'-)", ':D', ':-D', ':\'-)', ":')", ':o)', ':]', ':3', ':c)', ':>', '=]', '8)', '=)', ':}', ':^)', '8-D', 'd:', 'd;', '(:', ':d', 'xd',
+				 '8D', 'x-D', 'xD', 'X-D', 'XD', '=-D', '=D', '=-3', '=3', 'B^D', ':-))', ':*', ':^*', '( \'}{\' )', '^^', '(^_^)', '^-^', "^.^", "^3\^", "\^L\^", "<3", ':p', ':)))']
 
 neg_emoticons = [':(', ':-(', ":'(", ":'-(", '>:[', ':-c', ':c', ':-<', ':<', ':-[', ':[', ':{', ':\'-(', ':\'(', ' _( ', ':\'[', "='(", "' [", "='[", ":/", ":-/", "=/", ":\\", 'o_o', '0_o',
 				 ":'-<", ":' <", ":'<", "=' <", "='<", "T_T", "T.T", "(T_T)", "y_y", "y.y", "(Y_Y)", ";-;", ";_;", ";.;", ":_:", "o .__. o", ".-.", "</3", ">.<", ">_<", "):", ":o", 'o.o']
@@ -133,6 +144,7 @@ slang_words = {'afaik': 'as far as i know',
 			   'kiss': 'keep it simple, stupid',
 			   'ldr': 'long distance relationship',
 			   'lmao': 'laugh my ass off',
+			   'lmfao': 'laugh my fucking ass off',
 			   'lol': 'laughing out loud',
 			   'ltns': 'long time no see',
 			   'l8r': 'later',
@@ -176,27 +188,28 @@ counters = []
 emoji = []
 emoticons = []
 stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 
-              'you', 'you\'re', 'you\'ve', 'you\'ll', 'you\'d', 'your', 'yours', 
-              'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 
-              'she\'s', 'her', 'hers', 'herself', 'it', 'it\'s', 'its', 'itself', 
-              'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 
-              'who', 'whom', 'this', 'that', 'that\'ll', 'these', 'those', 'am', 
-              'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 
-              'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 
-              'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 
-              'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 
-              'through', 'during', 'before', 'after', 'above', 'below', 'to', 
-              'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 
-              'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 
-              'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 
-              'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 
-              'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 
-              'don\'t', 'should', 'should\'ve', 'now', 'd', 'll', 'm', 'o', 're', 
-              've', 'y', 'ain', 'aren', 'aren\'t', 'couldn', 'couldn\'t', 'didn', 'didn\'t', 
-              'doesn', 'doesn\'t', 'hadn', 'hadn\'t', 'hasn', 'hasn\'t', 'haven', 'haven\'t', 
-              'isn', 'isn\'t', 'ma', 'mightn', 'mightn\'t', 'mustn', 'mustn\'t', 'needn', 
-              'needn\'t', 'shan', 'shan\'t', 'shouldn', 'shouldn\'t', 'wasn', 'wasn\'t', 
-              'weren', 'weren\'t', 'won', 'won\'t', 'wouldn', 'wouldn\'t', '....', '...', '..', 'i am']
+			  'you', 'you\'re', 'you\'ve', 'you\'ll', 'you\'d', 'your', 'yours', 
+			  'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 
+			  'she\'s', 'her', 'hers', 'herself', 'it', 'it\'s', 'its', 'itself', 
+			  'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 
+			  'who', 'whom', 'this', 'that', 'that\'ll', 'these', 'those', 'am', 
+			  'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 
+			  'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 
+			  'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 
+			  'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 
+			  'through', 'during', 'before', 'after', 'above', 'below', 'to', 
+			  'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 
+			  'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 
+			  'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 
+			  'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 
+			  'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 
+			  'don\'t', 'should', 'should\'ve', 'now', 'd', 'll', 'm', 'o', 're', 
+			  've', 'y', 'ain', 'aren', 'aren\'t', 'couldn', 'couldn\'t', 'didn', 'didn\'t', 
+			  'doesn', 'doesn\'t', 'hadn', 'hadn\'t', 'hasn', 'hasn\'t', 'haven', 'haven\'t', 
+			  'isn', 'isn\'t', 'ma', 'mightn', 'mightn\'t', 'mustn', 'mustn\'t', 'needn', 
+			  'needn\'t', 'shan', 'shan\'t', 'shouldn', 'shouldn\'t', 'wasn', 'wasn\'t', 
+			  'weren', 'weren\'t', 'won', 'won\'t', 'wouldn', 'wouldn\'t', '....', '...', '..', 'i am']
+negative_words = get_negative_word()
 
 for file in list_of_file:
 	c = Counter()
@@ -211,17 +224,37 @@ for file in list_of_file:
 		emoticons.append([word for word in tweet if word in neg_emoticons or word in pos_emoticons])
 
 		tweet = [word for word in tweet if word not in emoji_neg and word not in emoji_pos and word not in pos_emoticons and word not in neg_emoticons and word not in others_emoji and word[0] != '#']
-		tweet = [word for word in tweet if word not in stop_words]
 		
-		tweet = [ps.stem(word) for word in tweet]
+		tweet = [lm.lemmatize(word) for word in tweet]
+		final_tweet = []
+		next_word_negated = False
+		
+		#print(negative_words)
+		for word in tweet:
+			if word in negative_words:  
+				next_word_negated = True  
+			else:
+				if word not in stop_words:
+					if next_word_negated:
+						final_tweet.append("not " + word)  
+					else:
+						final_tweet.append(word)
 
-		c.update(tweet)
+			next_word_negated = False
+		c.update(final_tweet)
 		
 	print(c.most_common(20))
 	print("Fine file")
 	counters.append(c)
-	pink_mask = np.array(Image.open(r"C:\Users\andre\Desktop\PINKLADYFINALE.png"))
-	wc = WordCloud(width = 800, height = 800, background_color='white', mask=pink_mask).generate_from_frequencies(c)
+	
+print("Fine di tutti i file")
+	
+	
+
+
+def generate_wordcloud(counter):
+	pink_mask = np.array(Image.open(MASK_PATH))
+	wc = WordCloud(width = 800, height = 800, background_color='white', mask=pink_mask).generate_from_frequencies(counter)
 	image_colors = ImageColorGenerator(pink_mask)
 	wc.recolor(color_func = image_colors) 
 	plt.figure(figsize = (8, 8), facecolor = None)
@@ -229,7 +262,4 @@ for file in list_of_file:
 	plt.savefig("test.png")
 	plt.axis("off")
 	plt.tight_layout(pad = 0)
-	
 	plt.show()
-
-print("Fine di tutti i file")
