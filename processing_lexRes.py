@@ -18,7 +18,6 @@ Goal numero 2,
 			  {"resource": "LIWC", "sentiment": "neg"}, 
 			  {"resource": "HL", "sentiment": "neg"}]}
 '''
-base_path = '/home/fazza/Desktop/materiale_maadb/risorse_lessicali'
 
 RESOURCES = {
 	'anger': ['EmoSN', 'NRC', 'sentisense'],
@@ -41,7 +40,7 @@ def retrive_information(sentiment):
 	files = RESOURCES[sentiment]
 	list_of_dict = []
 	for file in files:
-		complete_path = os.path.join(base_path, f'{sentiment.capitalize()}/{file}_{sentiment}.txt')
+		complete_path = os.path.join(BASE_PATH, f'{sentiment.capitalize()}/{file}_{sentiment}.txt')
 		with open(complete_path, 'r', encoding="utf8") as f: 
 			n_Words = 0
 			for line in f.readlines():
@@ -58,7 +57,7 @@ def retrive_word(sentiment):
 	files = RESOURCES[sentiment]
 	dict = {}
 	for file in files:
-		complete_path = os.path.join(base_path, f'{sentiment.capitalize()}/{file}_{sentiment}.txt')
+		complete_path = os.path.join(BASE_PATH, f'{sentiment.capitalize()}/{file}_{sentiment}.txt')
 		with open(complete_path, 'r', encoding="utf8") as f: 
 			for line in f.readlines():
 				if '_' not in line:
