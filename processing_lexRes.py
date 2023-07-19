@@ -55,14 +55,15 @@ def retrive_information(sentiment):
 
 def retrive_word(sentiment):
 	files = RESOURCES[sentiment]
-	dict = {}
+	list_of_dict = []
 	for file in files:
 		complete_path = os.path.join(BASE_PATH, f'{sentiment.capitalize()}/{file}_{sentiment}.txt')
 		with open(complete_path, 'r', encoding="utf8") as f: 
 			for line in f.readlines():
 				if '_' not in line:
-					if line not in dict.keys():
-						pass
+					#if line not in list_of_dict:
+					list_of_dict.append({'lemma': line, 'resources': [{'resource': file, 'sentiment': sentiment}]})
+	return list_of_dict
 
 def main():
 	lex_res_word_list = []
@@ -75,8 +76,14 @@ def main():
 		print("Lexical Resources' Words json has been built correctly.")	
 
 	#######
+	lex_res_word_list.clear()
 	for sentiment in RESOURCES.keys():
-		retrive_word(sentiment)
+		lex_res_word_list.extend(retrive_word(sentiment))
+	
+	file = os.path.join(PREP_PATH, "LexResourcesWords.json")
+	with open(file, 'w', encoding='utf8') as f:
+		f.write(dumps(lex_res_word_list, indent=2))
+		print("Lexical Resources' Words json has been built correctly.")
 
 
 
