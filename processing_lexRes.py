@@ -2,10 +2,21 @@ import os
 from bson.json_util import dumps
 from path import *
 '''
-Nostro goal, per ogni risorsa
+Goal numero 1, per ogni risorsa:
 {id: nome risorsa,
 sentiment: nome sentimento,
 totNumberWords: numero totale di parole per ogni file}
+Goal numero 2,
+{_id: ObjectId("..."),
+ lemma : word,
+ resources : [ {$ref : LexResources, $id : resource_filename}, {},... ]
+}
+{"lemma": "afraid", 
+"resources": [{"resource": "sentisense", "sentiment": "anger"},
+ 			  {"resource": "sentisense", "sentiment": "disgust"}, 
+			  {"resource": "NRC", "sentiment": "fear"}, 
+			  {"resource": "LIWC", "sentiment": "neg"}, 
+			  {"resource": "HL", "sentiment": "neg"}]}
 '''
 base_path = '/home/fazza/Desktop/materiale_maadb/risorse_lessicali'
 
@@ -43,6 +54,18 @@ def retrive_information(sentiment):
 						})
 	return list_of_dict
 
+def retrive_word(sentiment):
+	files = RESOURCES[sentiment]
+	dict = {}
+	for file in files:
+		complete_path = os.path.join(base_path, f'{sentiment.capitalize()}/{file}_{sentiment}.txt')
+		with open(complete_path, 'r', encoding="utf8") as f: 
+			for line in f.readlines():
+				if '_' not in line:
+					if line not in dict.keys():
+						pass
+
+
 def main():
 	lex_res_word_list = []
 	for sentiment in RESOURCES.keys():
@@ -52,6 +75,11 @@ def main():
 	with open(file, 'w', encoding='utf8') as f:
 		f.write(dumps(lex_res_word_list, indent=2))
 		print("Lexical Resources' Words json has been built correctly.")	
+
+	#######
+	for sentiment in RESOURCES.keys():
+		retrive_word(sentiment)
+
 
 
 if __name__== '__main__':
