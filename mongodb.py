@@ -18,7 +18,6 @@ def insert_lex_res_on_db(db):
     db.lexResources.insert_many(lex_res)
     db.lexResourcesWords.insert_many(lex_res_words)
 
-
 def main():
     client = MongoClient(urlAndrea)
     db = client.maadb_project
