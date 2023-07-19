@@ -11,9 +11,13 @@ def retrieve_data_from_json(path):
         return loads(f.read())
 
 def insert_lex_res_on_db(db):
-    path = f'{PREP_PATH}/lexResources.json'
-    lex_res = retrieve_data_from_json(path)
+    path_1 = f'{PREP_PATH}/lexResources.json'
+    path_2 = f'{PREP_PATH}/lexResourcesWords.json'
+    lex_res = retrieve_data_from_json(path_1)
+    lex_res_words = retrieve_data_from_json(path_2)
     db.lexResources.insert_many(lex_res)
+    db.lexResourcesWords.insert_many(lex_res_words)
+
 
 def main():
     client = MongoClient(urlAndrea)
