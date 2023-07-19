@@ -20,3 +20,8 @@ TRUST_PATH = "/home/fazza/Desktop/materiale_maadb/messaggi_twitter/dataset_dt_tr
 
 MASK_PATH = "/home/fazza/Desktop/PINKLADYFINALE.png"
 NEG_WORDS_PATH = "/home/fazza/Desktop/materiale_maadb/risorse_lessicali/elenco-parole-che-negano-parole-successive.txt"
+
+PATH = "/home/fazza/Desktop/materiale_maadb/risorse_lessicali"
+
+
+PREP_PATH = "/home/fazza/Desktop/materiale_maadb/preprocessed_lex_res"
