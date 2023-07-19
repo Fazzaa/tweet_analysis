@@ -64,7 +64,6 @@ def retrive_word(sentiment):
 					if line not in dict.keys():
 						pass
 
-
 def main():
 	lex_res_word_list = []
 	for sentiment in RESOURCES.keys():
