@@ -1,9 +1,7 @@
 from pymongo import MongoClient
 from path import *
 from bson.json_util import loads
-
-urlFabio = 'mongodb+srv://fabioluciani:WAn3fCWXuS54YG9R@sentimentanalysistwitte.kngytmy.mongodb.net/'
-urlAndrea = "mongodb+srv://andreafancellu:51yikZeu5I1nAMzR@sentimentanalysistwitte.kngytmy.mongodb.net/"
+from constants import urlAndrea, urlFabio
 
 
 def retrieve_data_from_json(path):
