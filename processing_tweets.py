@@ -1,10 +1,12 @@
 from path import *
 from nltk.stem import WordNetLemmatizer
+from nltk import pos_tag 
 from collections import Counter
 from PIL import Image
 import os
 from constants import *
 from pymongo import MongoClient
+import re
 
 '''
 {"doc_number": 0, 
@@ -18,6 +20,8 @@ from pymongo import MongoClient
 "sentiment": "trust"},
 '''
 
+TWEET_PATH = r"C:\Users\andre\Desktop\Progetti\ProgettoMAADBmateriale\Twitter_messaggi\dataset_dt_{}_60k.txt"
+emotions = ["anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust"]
 
 
 def retrive_lex_resource(lexname):
@@ -27,92 +31,89 @@ def retrive_lex_resource(lexname):
 	for l in lex:
 		return l["resources"]
 
-def get_negative_word():
-	negative_words = [] 
-	with open(NEG_WORDS_PATH, 'r', encoding="utf8") as f:
-		line = f.readline()
-		while line != '':
-			negative_words.append(line)
-			line = f.readline()
+def remove_usr_url(tweet):
+	return tweet.replace("USERNAME", "").replace("URL", "")
 
-	return negative_words
+def remove_punctuation(tweet):
+	return re.sub(r'[^\w\s]', " ", tweet) 
 
-emotions = {
-		   0: "Anger",
-	       1: "Anticipation",
-		   2: "Disgust",
-		   3: "Fear",
-		   4: "Joy",
-		   5: "Sadness",
-		   6: "Surprise",
-		   7: "Trust"
-		   }
+def tokenize_tweet(tweet):
+	return tweet.split(" ")
 
-anger_tweets = open(ANGER_PATH, encoding='utf-8')
-anticipation_tweets = open(ANTICIPATION_PATH, encoding='utf-8')
-disgust_tweets = open(DISGUST_PATH, encoding='utf-8')
-fear_tweets = open(FEAR_PATH, encoding='utf-8')
-joy_tweets = open(JOY_PATH, encoding='utf-8')
-sadness_tweets = open(SADNESS_PATH, encoding='utf-8')
-surprise_tweets = open(SURPRISE_PATH, encoding='utf-8')
-trust_tweets = open(TRUST_PATH, encoding='utf-8')
+def find_hashtags(tweet_tokenized):
+	#TODO farlo in modo da rimuovere hashtags da stringa direttamente 
+	new_tweet_tokenized = [] 
+	list_of_hashtags = []
+	for word in tweet_tokenized:
+		if word[0] == '#':
+			list_of_hashtags.append(word)
+		else:
+			new_tweet_tokenized.append(word)
+	return new_tweet_tokenized, list_of_hashtags
 
-list_of_file = [anger_tweets, anticipation_tweets, disgust_tweets, fear_tweets, joy_tweets, sadness_tweets, surprise_tweets, trust_tweets]
+def find_emoji(tweet_tokenized):
+	#TODO uguale hashtag
+	new_tweet_tokenized = [] 
+	list_of_emoji = []
+	for word in tweet_tokenized:
+		if word in emoji_pos or word in emoji_neg or word in others_emoji:
+			list_of_emoji.append(word)
+		else:
+			new_tweet_tokenized.append(word)
+	return new_tweet_tokenized, list_of_emoji
 
-lm = WordNetLemmatizer()
-hashtags = []
-counters = []
-emoji = []
-emoticons = []
+def find_emoticon(tweet_tokenized):
+	#TODO uguale hashtag
+	new_tweet_tokenized = [] 
+	list_of_emoticon = []
+	for word in tweet_tokenized:
+		if word in pos_emoticons or word in neg_emoticons:
+			list_of_emoticon.append(word)
+		else:
+			new_tweet_tokenized.append(word)
+	return new_tweet_tokenized, list_of_emoticon
 
-negative_words = get_negative_word()
-main_dict = {
-			"Anger": {},
-	     	"Anticipation": {},
-			"Disgust": {},
-			"Fear": {},
-			"Joy": {},
-			"Sadness": {},
-			"Surprise": {},
-			"Trust": {}
-			}
-i = 0
-while i in range(len(list_of_file)):
-	file = list_of_file[i]
-	c = Counter()
-	for tweet in file.readlines():
-		tweet = tweet.split(" ")
+def remove_stopwords(word):
+	return word if word not in stop_words else ""
 
-		tweet = [word.lower() for word in tweet if word not in remove_words and word not in punctuation]
-		tweet = [slang_words[word] if word in slang_words.keys() else word for word in tweet]
+def convert_slang(word):
+	return word if word not in slang_words else slang_words[word]
 
-		hashtags.append([word for word in tweet if "#" in word])#word[0] == '#'])
-		emoji.append([word for word in tweet if word in emoji_neg or word in emoji_pos or word in others_emoji])
-		emoticons.append([word for word in tweet if word in neg_emoticons or word in pos_emoticons])
+def get_lemma(word):
+	lemmatizer = WordNetLemmatizer()
+	return lemmatizer.lemmatize(word)
 
-		tweet = [word for word in tweet if word not in emoji_neg and word not in emoji_pos and word not in pos_emoticons and word not in neg_emoticons and word not in others_emoji and "#" not in word]
-		
-		tweet = [lm.lemmatize(word) for word in tweet]
-		final_tweet = []
-		next_word_negated = False
-		
-		for word in tweet:
-			if word in negative_words:  
-				next_word_negated = True  
-			else:
-				if word not in stop_words:
-					if next_word_negated:
-						final_tweet.append("not " + word)  
-					else:
-						final_tweet.append(word)
+def get_frequency(word, tokenized_tweet):
+	c = Counter(tokenized_tweet)
+	return c[word]
 
-			next_word_negated = False
-		
-		c.update(final_tweet)
-	
-	print(c.most_common(20))
-	print("Fine file")
-	counters.append(c)
-	i += 1
-print("Fine di tutti i file")
-	
+def elaborate_tweet(tokenized_tweet):
+	tag = None 
+	for word in tokenized_tweet:
+		word = convert_slang(word)
+		word, tag = pos_tag(word)
+		word = get_lemma(word)
+		word = remove_stopwords(word)
+
+def get_tweets():
+	hashtags = []
+	emojis = []
+	emoticons = []
+	for em in emotions:
+		with open(TWEET_PATH.format(em), 'r', encoding="utf8") as f:
+			for line in f.readlines():
+				line = remove_usr_url(line)
+				line = remove_punctuation(line)
+				line = tokenize_tweet(line)
+				line, hashtags = find_hashtags(line) 
+				line, emojis = find_emoji(line) 
+				line, emojticons = find_emoticon(line) 
+				elaborate_tweet(line)
+
+
+def main():
+	#get_tweets()
+	print(get_frequency("B", "A A A A A B B B D"))
+
+if __name__ == "__main__":
+	main() 
