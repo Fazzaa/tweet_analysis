@@ -8,6 +8,8 @@ from constants import *
 from pymongo import MongoClient
 import re
 import multiprocessing
+from cleantext import clean
+import emoji
 
 
 '''
@@ -52,16 +54,11 @@ def find_hashtags(tweet):
 		tweet = tweet.replace(ht, "")
 	return tweet, hashtag_list
 
-def find_emoji(tweet_tokenized):
-	#TODO find_emoji direttamente su stringhe
-	new_tweet_tokenized = [] 
-	list_of_emoji = []
-	for word in tweet_tokenized:
-		if word in emoji_pos or word in emoji_neg or word in others_emoji:
-			list_of_emoji.append(word)
-		else:
-			new_tweet_tokenized.append(word)
-	return new_tweet_tokenized, list_of_emoji
+def find_emoji(tweet):
+	emoji_pattern = re.compile(emoji.get_emoji_regexp())
+	emoji_list = emoji_pattern.findall(tweet)
+	tweet_cleaned = clean(tweet, no_emoji=True)
+	return tweet_cleaned, emoji_list
 
 def find_emoticon(tweet_tokenized):
 	#TODO find_emoticon direttamente su stringhe
@@ -138,10 +135,10 @@ def get_tweets(sentiment, db):
 
 
 def main():
-	client = MongoClient(urlAndrea)
-	db = client.maadb_project
-	retrive_lex_resource(db)
-	get_tweets("anger", db)
+	#client = MongoClient(urlAndrea)
+	#db = client.maadb_project
+	#retrive_lex_resource(db)
+	#get_tweets("anger", db)
 	'''n_processes = len(sentiments)
 	processes = []
 	for i in range(n_processes):
@@ -153,7 +150,8 @@ def main():
 	for p in processes:
 		p.join()
 	'''
-	print("Tweet json has been built correctly.")
-	
+	#print("Tweet json has been built correctly.")
+	print(find_emoji("i need to stop eating ... but that'll never happen . #imfuckingfat 😒 🍔🍟🍜🍧🍰🍓 😌 "))
+
 if __name__ == "__main__":
 	main() 
