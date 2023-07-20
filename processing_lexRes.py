@@ -1,7 +1,6 @@
 import os
 from bson.json_util import dumps
 from path import *
-from collections import defaultdict
 
 '''
 Goal numero 1, per ogni risorsa:
