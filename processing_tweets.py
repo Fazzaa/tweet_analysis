@@ -44,9 +44,6 @@ def remove_usr_url(tweet):
 def remove_punctuation(tweet):
 	return re.sub(r'[^\w\s]', " ", tweet) 
 
-def tokenize_tweet(tweet):
-	return tweet.strip().split(" ")
-
 def find_hashtags(tweet):
 	regex = '#\w+'
 	hashtag_list = re.findall(regex, tweet)
@@ -60,16 +57,22 @@ def find_emoji(tweet):
 	tweet_cleaned = clean(tweet, no_emoji=True)
 	return tweet_cleaned, emoji_list
 
-def find_emoticon(tweet_tokenized):
-	#TODO find_emoticon direttamente su stringhe
-	new_tweet_tokenized = [] 
+def find_emoticon(tweet):
 	list_of_emoticon = []
-	for word in tweet_tokenized:
-		if word in pos_emoticons or word in neg_emoticons:
-			list_of_emoticon.append(word)
-		else:
-			new_tweet_tokenized.append(word)
-	return new_tweet_tokenized, list_of_emoticon
+
+	for ep in pos_emoticons:
+		if ep in tweet:
+			list_of_emoticon.append(ep)
+			tweet = tweet.replace(ep, "")
+	for en in neg_emoticons:
+		if en in tweet:
+			list_of_emoticon.append(en)
+			tweet = tweet.replace(en, "")
+
+	return tweet, list_of_emoticon 
+		
+def tokenize_tweet(tweet):
+	return tweet.strip().split(" ")
 
 def remove_stopwords(word):
 	return word if word not in stop_words else ""
@@ -108,17 +111,15 @@ def get_tweets(sentiment, db):
 	final_list, hashtags, emojis, emoticons = [], [], [], []
 	with open(TWEET_PATH.format(sentiment), 'r', encoding="utf8") as f:
 		for i, line in enumerate(f.readlines()):
-			#! Una volta fatto emoji ed emoticon su str spostarlo sopra punteggiatura
 			tweet_dict = {}
 			print(i)
 			line = remove_usr_url(line)
 			line, hashtags = find_hashtags(line)
-			##! QUI
+			line, emojis = find_emoji(line)
+			line, emoticons = find_emoticon(line)
 			line = remove_punctuation(line)
 			
 			line = tokenize_tweet(line)
-			line, emojis = find_emoji(line)
-			line, emoticons = find_emoticon(line)
 			list_of_words = elaborate_tweet(line, db)
 			tweet_dict["doc_number"] = i
 			tweet_dict["words"] = list_of_words
@@ -131,15 +132,14 @@ def get_tweets(sentiment, db):
 	
 	file_path = os.path.join(PREP_PATH, f"preprocessed_tweets_{sentiment}.json")
 	with open(file_path, 'w', encoding='utf8') as f:
-		f.write(dumps(final_list))
+		f.write(dumps(final_list, indent=2))
 
 
 def main():
-	#client = MongoClient(urlAndrea)
-	#db = client.maadb_project
-	#retrive_lex_resource(db)
-	#get_tweets("anger", db)
-	'''n_processes = len(sentiments)
+	client = MongoClient(urlAndrea)
+	db = client.maadb_project
+	retrive_lex_resource(db)
+	n_processes = len(sentiments)
 	processes = []
 	for i in range(n_processes):
 		print(i)
@@ -149,9 +149,7 @@ def main():
 		processes.append(p)
 	for p in processes:
 		p.join()
-	'''
-	#print("Tweet json has been built correctly.")
-	print(find_emoji("i need to stop eating ... but that'll never happen . #imfuckingfat 😒 🍔🍟🍜🍧🍰🍓 😌 "))
-
+	print("Tweet json has been built correctly.")
+	
 if __name__ == "__main__":
 	main() 
