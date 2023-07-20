@@ -2,11 +2,13 @@ from path import *
 from nltk.stem import WordNetLemmatizer
 from nltk import pos_tag 
 from collections import Counter
-from PIL import Image
+from bson.json_util import dumps
 import os
 from constants import *
 from pymongo import MongoClient
 import re
+import multiprocessing
+
 
 '''
 {"doc_number": 0, 
@@ -19,18 +21,21 @@ import re
 "hashtags": ["#sotakeoffallyourclothes", "#noimalady", "#unlessitsgirlsnight"], 
 "sentiment": "trust"},
 '''
+lexical_resources = {}
+sentiments = ["anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust"]
 
-TWEET_PATH = r"C:\Users\andre\Desktop\Progetti\ProgettoMAADBmateriale\Twitter_messaggi\dataset_dt_{}_60k.txt"
-emotions = ["anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust"]
 
-
-def retrive_lex_resource(lexname):
-	client = MongoClient(urlAndrea)
-	db = client.maadb_project
-	lex = db.lexResourcesWords.find({"lemma":lexname})
+def retrive_lex_resource(db):
+	lex = db.lexResourcesWords.find()
 	for l in lex:
-		return l["resources"]
+		lexical_resources[l["lemma"]] = l["resources"]
 
+def find_resources_from_lexical_res(word):
+	if word in lexical_resources.keys():
+		return lexical_resources[word]
+	else:
+		return "null"
+		
 def remove_usr_url(tweet):
 	return tweet.replace("USERNAME", "").replace("URL", "")
 
@@ -38,21 +43,17 @@ def remove_punctuation(tweet):
 	return re.sub(r'[^\w\s]', " ", tweet) 
 
 def tokenize_tweet(tweet):
-	return tweet.split(" ")
+	return tweet.strip().split(" ")
 
-def find_hashtags(tweet_tokenized):
-	#TODO farlo in modo da rimuovere hashtags da stringa direttamente 
-	new_tweet_tokenized = [] 
-	list_of_hashtags = []
-	for word in tweet_tokenized:
-		if word[0] == '#':
-			list_of_hashtags.append(word)
-		else:
-			new_tweet_tokenized.append(word)
-	return new_tweet_tokenized, list_of_hashtags
+def find_hashtags(tweet):
+	regex = '#\w+'
+	hashtag_list = re.findall(regex, tweet)
+	for ht in hashtag_list:
+		tweet = tweet.replace(ht, "")
+	return tweet, hashtag_list
 
 def find_emoji(tweet_tokenized):
-	#TODO uguale hashtag
+	#TODO find_emoji direttamente su stringhe
 	new_tweet_tokenized = [] 
 	list_of_emoji = []
 	for word in tweet_tokenized:
@@ -63,7 +64,7 @@ def find_emoji(tweet_tokenized):
 	return new_tweet_tokenized, list_of_emoji
 
 def find_emoticon(tweet_tokenized):
-	#TODO uguale hashtag
+	#TODO find_emoticon direttamente su stringhe
 	new_tweet_tokenized = [] 
 	list_of_emoticon = []
 	for word in tweet_tokenized:
@@ -87,33 +88,72 @@ def get_frequency(word, tokenized_tweet):
 	c = Counter(tokenized_tweet)
 	return c[word]
 
-def elaborate_tweet(tokenized_tweet):
+def elaborate_tweet(tokenized_tweet, db):
 	tag = None 
+	tweet = []
 	for word in tokenized_tweet:
+		lemma_dict = {}
 		word = convert_slang(word)
-		word, tag = pos_tag(word)
+		word, tag = pos_tag([word])[0]
 		word = get_lemma(word)
 		word = remove_stopwords(word)
-
-def get_tweets():
-	hashtags = []
-	emojis = []
-	emoticons = []
-	for em in emotions:
-		with open(TWEET_PATH.format(em), 'r', encoding="utf8") as f:
-			for line in f.readlines():
-				line = remove_usr_url(line)
-				line = remove_punctuation(line)
-				line = tokenize_tweet(line)
-				line, hashtags = find_hashtags(line) 
-				line, emojis = find_emoji(line) 
-				line, emojticons = find_emoticon(line) 
-				elaborate_tweet(line)
+		if word != "":
+			freq = get_frequency(word, tokenized_tweet)
+			resources = find_resources_from_lexical_res(word)
+			lemma_dict["lemma"] = word
+			lemma_dict["pos_tag"] = tag
+			lemma_dict["freq"] = freq
+			lemma_dict["in_lex_resources"] = resources
+			tweet.append(lemma_dict)
+	return tweet
+def get_tweets(sentiment, db):
+	
+	final_list, hashtags, emojis, emoticons = [], [], [], []
+	with open(TWEET_PATH.format(sentiment), 'r', encoding="utf8") as f:
+		for i, line in enumerate(f.readlines()):
+			#! Una volta fatto emoji ed emoticon su str spostarlo sopra punteggiatura
+			tweet_dict = {}
+			print(i)
+			line = remove_usr_url(line)
+			line, hashtags = find_hashtags(line)
+			##! QUI
+			line = remove_punctuation(line)
+			
+			line = tokenize_tweet(line)
+			line, emojis = find_emoji(line)
+			line, emoticons = find_emoticon(line)
+			list_of_words = elaborate_tweet(line, db)
+			tweet_dict["doc_number"] = i
+			tweet_dict["words"] = list_of_words
+			tweet_dict["emojis"] = emojis
+			tweet_dict["emoticons"] = emoticons
+			tweet_dict["hashtags"] = hashtags
+			tweet_dict["sentiment"] = sentiment
+			
+			final_list.append(tweet_dict)
+	
+	file_path = os.path.join(PREP_PATH, f"preprocessed_tweets_{sentiment}.json")
+	with open(file_path, 'w', encoding='utf8') as f:
+		f.write(dumps(final_list))
 
 
 def main():
-	#get_tweets()
-	print(get_frequency("B", "A A A A A B B B D"))
-
+	client = MongoClient(urlAndrea)
+	db = client.maadb_project
+	retrive_lex_resource(db)
+	get_tweets("anger", db)
+	'''n_processes = len(sentiments)
+	processes = []
+	for i in range(n_processes):
+		print(i)
+		print(sentiments[i])
+		p = multiprocessing.Process(target=get_tweets, args=[sentiments[i], db])
+		p.start()
+		processes.append(p)
+	for p in processes:
+		p.join()
+	'''
+	print("Tweet json has been built correctly.")
+	
 if __name__ == "__main__":
 	main() 
