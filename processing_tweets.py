@@ -7,7 +7,6 @@ import os
 from constants import *
 from pymongo import MongoClient
 import re
-import multiprocessing
 from cleantext import clean
 import emoji
 
