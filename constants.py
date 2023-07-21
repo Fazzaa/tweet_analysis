@@ -174,3 +174,4 @@ remove_words = ['USERNAME', 'URL']
 
 urlFabio = 'mongodb+srv://fabioluciani:WAn3fCWXuS54YG9R@sentimentanalysistwitte.kngytmy.mongodb.net/'
 urlAndrea = "mongodb+srv://andreafancellu:51yikZeu5I1nAMzR@sentimentanalysistwitte.kngytmy.mongodb.net/"
+urlLocal = "mongodb://localhost:27017"

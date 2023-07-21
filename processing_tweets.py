@@ -27,7 +27,9 @@ lexical_resources = {}
 sentiments = ["anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust"]
 
 
-def retrive_lex_resource(db):
+def retrive_lex_resource():
+	client = MongoClient(urlLocal)
+	db = client.maadb_project
 	lex = db.lexResourcesWords.find()
 	for l in lex:
 		lexical_resources[l["lemma"]] = l["resources"]
@@ -88,7 +90,7 @@ def get_frequency(word, tokenized_tweet):
 	c = Counter(tokenized_tweet)
 	return c[word]
 
-def elaborate_tweet(tokenized_tweet, db):
+def elaborate_tweet(tokenized_tweet):
 	tag = None 
 	tweet = []
 	for word in tokenized_tweet:
@@ -106,8 +108,8 @@ def elaborate_tweet(tokenized_tweet, db):
 			lemma_dict["in_lex_resources"] = resources
 			tweet.append(lemma_dict)
 	return tweet
-def get_tweets(sentiment, db):
-	
+
+def get_tweets(sentiment):
 	final_list, hashtags, emojis, emoticons = [], [], [], []
 	with open(TWEET_PATH.format(sentiment), 'r', encoding="utf8") as f:
 		for i, line in enumerate(f.readlines()):
@@ -120,7 +122,7 @@ def get_tweets(sentiment, db):
 			line = remove_punctuation(line)
 			
 			line = tokenize_tweet(line)
-			list_of_words = elaborate_tweet(line, db)
+			list_of_words = elaborate_tweet(line)
 			tweet_dict["doc_number"] = i
 			tweet_dict["words"] = list_of_words
 			tweet_dict["emojis"] = emojis
@@ -136,19 +138,11 @@ def get_tweets(sentiment, db):
 
 
 def main():
-	client = MongoClient(urlAndrea)
-	db = client.maadb_project
-	retrive_lex_resource(db)
+	retrive_lex_resource()
 	n_processes = len(sentiments)
 	processes = []
 	for i in range(n_processes):
-		print(i)
-		print(sentiments[i])
-		p = multiprocessing.Process(target=get_tweets, args=[sentiments[i], db])
-		p.start()
-		processes.append(p)
-	for p in processes:
-		p.join()
+		get_tweets(sentiments[i])
 	print("Tweet json has been built correctly.")
 	
 if __name__ == "__main__":

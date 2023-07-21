@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from path import *
 from bson.json_util import loads
-from constants import urlAndrea, urlFabio
+from constants import urlAndrea, urlFabio, urlLocal
 
 sentiments = ["anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust"]
 
@@ -24,11 +24,11 @@ def insert_tweets_on_db(db):
         db.tweets.insert_many(tweets)
 
 def main():
-    client = MongoClient(urlAndrea)
+    client = MongoClient(urlLocal)
     db = client.maadb_project
-    #insert_lex_res_on_db(db)
-    #print("Inserted lexResources")
-    insert_tweets_on_db(db)
+    insert_lex_res_on_db(db)
+    print("Inserted lexResources")
+    #insert_tweets_on_db(db)
     print("Inserted tweets")
 
 if __name__ == '__main__':
