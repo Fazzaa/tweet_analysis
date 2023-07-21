@@ -30,7 +30,7 @@ def exec_query(query, connection):
 	connection.commit()
 	
 def create_table_sentiment(connection):
-	exec_query("drop table maadb_project.sentiment", connection)
+	#exec_query("drop table maadb_project.sentiment", connection)
 	query = """CREATE TABLE `maadb_project`.`sentiment` (
 				`nome` VARCHAR(20) NOT NULL, 
 				PRIMARY KEY (`nome`));"""
@@ -38,7 +38,7 @@ def create_table_sentiment(connection):
 	print(COMPLETED_OP)
 
 def create_table_lexical_resource(connection):
-	exec_query("drop table maadb_project.lexical_resource", connection)
+	#exec_query("drop table maadb_project.lexical_resource", connection)
 	query = """CREATE TABLE `maadb_project`.`lexical_resource` (
   				`id_lex_res` INT NOT NULL AUTO_INCREMENT,
   				`sentiment` VARCHAR(20) NOT NULL,
@@ -53,7 +53,7 @@ def create_table_lexical_resource(connection):
 	print(COMPLETED_OP)
 
 def create_table_words(connection):
-	exec_query("drop table maadb_project.word", connection)
+	#exec_query("drop table maadb_project.word", connection)
 	query = """CREATE TABLE `maadb_project`.`word` (
 				`id_word` INT NOT NULL AUTO_INCREMENT,
 				`lemma` VARCHAR(20) NOT NULL,
@@ -62,7 +62,7 @@ def create_table_words(connection):
 	print(COMPLETED_OP)
 
 def create_table_token(connection):
-	exec_query("drop table maadb_project.token", connection)
+	#exec_query("drop table maadb_project.token", connection)
 	query = """CREATE TABLE `maadb_project`.`token` (
 				`id_token` INT NOT NULL AUTO_INCREMENT,
 				`token` VARCHAR(20) NOT NULL,
@@ -72,7 +72,7 @@ def create_table_token(connection):
 	print(COMPLETED_OP)
 
 def create_table_tweet(connection):
-	exec_query("drop table maadb_project.tweet", connection)
+	#exec_query("drop table maadb_project.tweet", connection)
 	query = """CREATE TABLE `maadb_project`.`tweet` (
   				`id_tweet` INT NOT NULL AUTO_INCREMENT,
   				`sentiment` VARCHAR(20) NOT NULL,
@@ -85,7 +85,7 @@ def create_table_tweet(connection):
 	print(COMPLETED_OP)
 
 def create_table_wordsintweet(connection):
-	exec_query("drop table maadb_project.wordsintweet", connection)
+	#exec_query("drop table maadb_project.wordsintweet", connection)
 	query = """CREATE TABLE `maadb_project`.`wordsintweet` (
   				`id_word` INT NOT NULL,
   				`id_tweet` INT NOT NULL,
@@ -102,7 +102,7 @@ def create_table_wordsintweet(connection):
 	print(COMPLETED_OP)
 
 def create_table_tokenintweet(connection):
-	exec_query("drop table maadb_project.tokenintweet", connection)
+	#exec_query("drop table maadb_project.tokenintweet", connection)
 	query = """CREATE TABLE `maadb_project`.`tokensintweet` (
   				`id_token` INT NOT NULL,
   				`id_tweet` INT NOT NULL,
@@ -118,7 +118,7 @@ def create_table_tokenintweet(connection):
 	print(COMPLETED_OP)
 
 def create_table_wordinlexres(connection):
-	exec_query("drop table maadb_project.wordsinlexres", connection)
+	#exec_query("drop table maadb_project.wordsinlexres", connection)
 	query = """CREATE TABLE `maadb_project`.`wordsinlexres` (
   				`id_word` INT NOT NULL,
   				`id_lexres` INT NOT NULL,
@@ -147,9 +147,9 @@ def insert_lexical_resources(connection, lex_res):
 	print(COMPLETED_OP)
 
 def insert_tweet(connection):
-	query = """INSERT INTO `maadb_project`.`tweet` (`sentiment`, `doc_number`) VALUES"""
 	insert = "('{}', '{}'),"
 	for s in sentiments:
+		query = """INSERT INTO `maadb_project`.`tweet` (`sentiment`, `doc_number`) VALUES"""
 		for i in range(60000):
 			query += insert.format(s, i)
 		exec_query(query[:-1] + ";", connection)
