@@ -2,6 +2,7 @@ import mysql.connector
 from path import *
 from mysql.connector import Error as MySqlError
 from bson.json_util import loads
+from constants import *
 import os
 
 
@@ -24,7 +25,6 @@ def create_db_connection(host_name, user_name, user_password, db_name):
 	return connection
 
 def exec_query(query, connection):
-	print(query)
 	cursor = connection.cursor()
 	cursor.execute(query)
 	connection.commit()
@@ -156,6 +156,30 @@ def insert_tweet(connection):
 		print(f"Completed {s}")
 	print(COMPLETED_OP)
 
+def insert_token_of_sent_on_db(path, connection):
+    print(path)
+    data = retrieve_data_from_json(path)
+    insert_non_words_query = "INSERT INTO token (token, type) VALUES"
+    insert_single_quote = '\n("{}", "{}"),'
+    insert_double_quote = "\n('{}', '{}'),"
+    for tweet in data:
+        for type in ['emojis', 'emoticons']:
+            for token in tweet[type]:
+                if token.find('"') > 0:
+                    insert_non_words_query += insert_double_quote.format(token, type)
+                else:
+                    insert_non_words_query += insert_single_quote.format(token, type)
+    insert_non_words_query = insert_non_words_query[:-1] + ";"
+    exec_query(insert_non_words_query, connection)
+
+def insert_token_on_db(connection):
+    for sent in sentiments:
+        path = os.path.join(PREP_PATH, f"preprocessed_tweets_{sent}.json")
+        if os.path.exists(path):
+            insert_token_of_sent_on_db(path, connection)
+    print("Non-word tokens correctly inserted")
+
+
 def create_db_tables(connection):
 	create_table_sentiment(connection)
 	create_table_lexical_resource(connection)
@@ -173,6 +197,7 @@ def main():
 	#path_1 = f'{PREP_PATH}/LexResources.json'
 	#lex_res = retrieve_data_from_json(path_1)
 	#insert_lexical_resources(connection, lex_res)
-	insert_tweet(connection)
+	#insert_tweet(connection)
+	insert_token_on_db(connection)
 if __name__=="__main__":
 	main()
