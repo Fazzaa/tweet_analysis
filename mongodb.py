@@ -28,7 +28,7 @@ def main():
     db = client.maadb_project
     insert_lex_res_on_db(db)
     print("Inserted lexResources")
-    #insert_tweets_on_db(db)
+    insert_tweets_on_db(db)
     print("Inserted tweets")
 
 if __name__ == '__main__':

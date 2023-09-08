@@ -37,7 +37,7 @@ def find_resources_from_lexical_res(word):
 	if word in lexical_resources.keys():
 		return lexical_resources[word]
 	else:
-		return "null"
+		return []
 		
 def remove_usr_url(tweet):
 	return tweet.replace("USERNAME", "").replace("URL", "")
