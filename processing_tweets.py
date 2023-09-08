@@ -22,6 +22,7 @@ import emoji
 "hashtags": ["#sotakeoffallyourclothes", "#noimalady", "#unlessitsgirlsnight"], 
 "sentiment": "trust"},
 '''
+
 lexical_resources = {}
 sentiments = ["anger", "anticipation", "disgust", "fear", "joy", "sadness", "surprise", "trust"]
 

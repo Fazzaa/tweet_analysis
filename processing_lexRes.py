@@ -7,6 +7,7 @@ Goal numero 1, per ogni risorsa:
 {id: nome risorsa,
 sentiment: nome sentimento,
 totNumberWords: numero totale di parole per ogni file}
+
 Goal numero 2,
 {_id: ObjectId("..."),
  lemma : word,
@@ -88,7 +89,6 @@ def main():
 		f.write(dumps(lex_res_word_list, indent=2))
 		print("Lexical Resources' Words json has been built correctly.")	
 
-	#######
 	lex_res_word_list.clear()
 	for sentiment in RESOURCES.keys():
 		lex_res_word_list.extend(retrive_word(sentiment))	
